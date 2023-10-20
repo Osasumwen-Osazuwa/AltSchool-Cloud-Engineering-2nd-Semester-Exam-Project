@@ -1,0 +1,32 @@
+---
+- name: Deploy PHP Application on Slave
+  hosts: Slave
+  become: yes
+
+  tasks:
+    - name: Copy provision-master.sh to Slave node
+      copy:
+        src: provision-master.sh
+        dest: /tmp/provision-master.sh
+
+    - name: Execute provision-master.sh on Slave node
+      shell: /tmp/provision-master.sh
+    
+    - name: Verify PHP application accessibility
+      uri:
+        url: http://10.0.2.15
+        status_code: 200
+      register: response
+      failed_when: response.status != 200
+
+- name: Set up cron job for server uptime check
+  hosts: Master
+  become: yes
+
+  tasks:
+    - name: Add cron job to check uptime every day at 12 am
+      cron:
+        name: "uptime_check"
+        minute: 0
+        hour: 0
+        job: "uptime > /var/log/uptime.log 2>&1"
